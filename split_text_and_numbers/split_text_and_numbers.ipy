@@ -1,0 +1,61 @@
+import pandas as pd
+import re
+
+def split_text_and_number(text):
+    """
+    Splits a given text into numeric and textual parts.
+
+    Parameters:
+        text (str): The input string to process.
+
+    Returns:
+        tuple: A tuple with (numeric_part, text_part).
+               numeric_part (float): The numeric part of the string or 0 if not found.
+               text_part (str): The textual part of the string or an empty string.
+    """
+    if not isinstance(text, str):
+        return (0, '')  # Return default values if the input is not a string
+
+    # Remove spaces and normalize the text
+    text = text.strip().lower()
+
+    # Extract the numeric part
+    numeric_match = re.search(r'\d+\.?\d*', text)  # Matches integers or decimals
+    numeric_part = float(numeric_match.group()) if numeric_match else 0
+
+    # Extract the text part (everything except the numbers) and clean trailing symbols
+    text_part = re.sub(r'\d+\.?\d*', '', text).strip()  # Remove numbers
+    text_part = re.sub(r'[^\w\s]', '', text_part)  # Remove punctuation (e.g., '.', ',')
+
+    return numeric_part, text_part
+
+def split_column_into_numeric_and_text(df, column_name):
+    """
+    Splits a column into numeric and textual parts, creating two new columns.
+
+    Parameters:
+        df (pd.DataFrame): The input DataFrame.
+        column_name (str): The name of the column to process.
+
+    Returns:
+        pd.DataFrame: A DataFrame with two new columns:
+                      - "{column_name}_numeric" for the numeric part
+                      - "{column_name}_text" for the textual part
+    """
+    if column_name not in df.columns:
+        raise ValueError(f"The column '{column_name}' does not exist in the DataFrame.")
+    
+    # Apply the split_text_and_number function to the column
+    results = df[column_name].apply(split_text_and_number)
+    
+    # Create two new columns
+    df[f"{column_name}_numeric"] = results.apply(lambda x: x[0])  # Numeric part
+    df[f"{column_name}_text"] = results.apply(lambda x: x[1])  # Textual part
+
+    return df
+
+# Examples
+print(split_text_and_number("500 ml"))
+print(split_text_and_number("1000.5kg."))
+print(split_text_and_number("No number here"))
+print(split_text_and_number(None))
